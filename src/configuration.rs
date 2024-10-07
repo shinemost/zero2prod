@@ -26,3 +26,13 @@ pub fn get_configuration() -> Result<Settings, config::ConfigError> {
         .build()?;
     settings.try_deserialize::<Settings>()
 }
+
+impl DatabaseSettings {
+    // 获取pg数据库连接url
+    pub fn get_connection_string(&self) -> String {
+        format!(
+            "postgres://{}:{}@{}:{}/{}",
+            self.username, self.password, self.host, self.port, self.database_name
+        )
+    }
+}
