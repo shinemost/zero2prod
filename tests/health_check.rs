@@ -5,7 +5,6 @@ use std::net::TcpListener;
 use zero2prod::configuration::{get_configuration, DatabaseSettings};
 use zero2prod::startup::run;
 
-#[derive(Clone)]
 pub struct TestApp {
     pub address: String,
     pub db_pool: PgPool,
