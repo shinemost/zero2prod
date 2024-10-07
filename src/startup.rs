@@ -1,12 +1,12 @@
 use crate::routes::{health_check, subscribe};
 use actix_web::dev::Server;
 use actix_web::{web, App, HttpServer};
-use sqlx::PgConnection;
+use sqlx::PgPool;
 use std::net::TcpListener;
 
-pub fn run(listener: TcpListener, connection: PgConnection) -> Result<Server, std::io::Error> {
-    // 将连接包装在一个智能指针中
-    let connection = web::Data::new(connection);
+pub fn run(listener: TcpListener, db_pool: PgPool) -> Result<Server, std::io::Error> {
+    // 将连接池使用Web::data包装起来，其本质上是一个Arc智能指针
+    let connection = web::Data::new(db_pool);
     // 通过上下文捕获connection
     let server = HttpServer::new(move || {
         App::new()
