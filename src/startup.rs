@@ -17,6 +17,7 @@ pub fn run(listener: TcpListener, db_pool: PgPool) -> Result<Server, std::io::Er
             .route("/subscriptions", web::post().to(subscribe))
             // 将连接注册为应用程序状态的一部分
             // 获得一个指针的副本并将其绑定到应用程序状态
+            // 类似于golang里的context透传元数据
             .app_data(connection.clone())
     })
     .listen(listener)?
