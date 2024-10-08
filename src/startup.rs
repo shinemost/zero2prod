@@ -1,5 +1,6 @@
 use crate::routes::{health_check, subscribe};
 use actix_web::dev::Server;
+use actix_web::middleware::Logger;
 use actix_web::{web, App, HttpServer};
 use sqlx::PgPool;
 use std::net::TcpListener;
@@ -10,6 +11,8 @@ pub fn run(listener: TcpListener, db_pool: PgPool) -> Result<Server, std::io::Er
     // 通过上下文捕获connection
     let server = HttpServer::new(move || {
         App::new()
+            // 注册中间件，此处是日志
+            .wrap(Logger::default())
             .route("/health_check", web::get().to(health_check))
             .route("/subscriptions", web::post().to(subscribe))
             // 将连接注册为应用程序状态的一部分
