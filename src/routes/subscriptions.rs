@@ -11,16 +11,16 @@ pub struct FormData {
 
 pub async fn subscribe(form: web::Form<FormData>, pool: web::Data<PgPool>) -> HttpResponse {
     let request_id = Uuid::new_v4();
-    tracing::info!(
-        "request_id {} - Adding '{}' '{}' as a new subscriber.",
-        request_id,
-        form.email,
-        form.name
+    // info_span宏会创建一个info级别的跨度
+    let request_span = tracing::info_span!(
+        "Adding subscribe to request",
+        %request_id,
+        subscription_name = %form.name,
+        subscriber_email = %form.email
     );
-    tracing::info!(
-        "request_id {} - Saving new subscriber details in the database",
-        request_id
-    );
+    // 激活request_span
+    // 离开作用域会调用析构函数Drop
+    let _enter = request_span.enter();
     match sqlx::query!(
         r#"
         INSERT INTO subscriptions (id, email, name, subscribed_at)
