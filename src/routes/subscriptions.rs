@@ -2,6 +2,7 @@ use actix_web::{web, HttpResponse};
 use chrono::Utc;
 use sqlx::types::Uuid;
 use sqlx::PgPool;
+use tracing::Instrument;
 
 #[derive(serde::Deserialize)]
 pub struct FormData {
@@ -20,7 +21,9 @@ pub async fn subscribe(form: web::Form<FormData>, pool: web::Data<PgPool>) -> Ht
     );
     // 激活request_span
     // 离开作用域会调用析构函数Drop
-    let _enter = request_span.enter();
+    let _request_span_guard = request_span.enter();
+
+    let query_span = tracing::info_span!("Saving new subscriber details into database");
     match sqlx::query!(
         r#"
         INSERT INTO subscriptions (id, email, name, subscribed_at)
@@ -32,16 +35,13 @@ pub async fn subscribe(form: web::Form<FormData>, pool: web::Data<PgPool>) -> Ht
         Utc::now(),
     )
     .execute(pool.get_ref())
+    // 绑定这个插桩，然后等待这个future完成
+    .instrument(query_span)
     .await
     {
-        Ok(_) => {
-            tracing::info!(
-                "request_id {} - New subscriber details have been saved",
-                request_id
-            );
-            HttpResponse::Ok().finish()
-        }
+        Ok(_) => HttpResponse::Ok().finish(),
         Err(e) => {
+            // 这条错误日志不在query_span中
             tracing::error!(
                 "request_id {} - Failed to execute query: {:?}",
                 request_id,
