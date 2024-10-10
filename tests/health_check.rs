@@ -141,5 +141,3 @@ async fn subscribe_returns_a_400_when_data_is_missing() {
         );
     }
 }
-// cargo install bunyan
-// TEST_LOG=true cargo test health_check_works | bunyan
