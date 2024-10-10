@@ -1,6 +1,7 @@
 //! tests/health_check.rs
 
 use once_cell::sync::Lazy;
+use secrecy::ExposeSecret;
 use sqlx::{Connection, Executor, PgConnection, PgPool};
 use std::net::TcpListener;
 use zero2prod::configuration::{get_configuration, DatabaseSettings};
@@ -91,7 +92,10 @@ pub async fn configure_database(config: &DatabaseSettings) -> PgPool {
 async fn subscribe_returns_a_200_for_valid_form_data() {
     let test_app = spawn_app().await;
     let configuration = get_configuration().expect("Failed to read configuration.");
-    let connect_url = configuration.database.get_connection_string();
+    let connect_url = configuration
+        .database
+        .get_connection_string()
+        .expose_secret();
     let mut connection = PgConnection::connect(&connect_url)
         .await
         .expect("Failed to connect to Postgres");

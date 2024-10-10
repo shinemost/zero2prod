@@ -14,4 +14,7 @@ bunyan:
 test:
 	TEST_LOG=true cargo test health_check_works | bunyan
 
-.PHONY: http http2 run test
+check:
+	cargo check
+
+.PHONY: http http2 run test check
