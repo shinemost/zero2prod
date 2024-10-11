@@ -70,15 +70,16 @@ async fn spawn_app() -> TestApp {
 }
 
 pub async fn configure_database(config: &DatabaseSettings) -> PgPool {
-    let mut connection = PgConnection::connect(&config.get_connection_string_without_db())
-        .await
-        .expect("Failed to connect to Postgres.");
+    let mut connection =
+        PgConnection::connect(&config.get_connection_string_without_db().expose_secret())
+            .await
+            .expect("Failed to connect to Postgres.");
     connection
         .execute(format!(r#"CREATE DATABASE "{}";"#, config.database_name).as_str())
         .await
         .expect("Failed to create database.");
 
-    let connection_pool = PgPool::connect(&config.get_connection_string())
+    let connection_pool = PgPool::connect(&config.get_connection_string().expose_secret())
         .await
         .expect("Failed to connect to Postgres.");
     sqlx::migrate!("./migrations")
@@ -92,13 +93,14 @@ pub async fn configure_database(config: &DatabaseSettings) -> PgPool {
 async fn subscribe_returns_a_200_for_valid_form_data() {
     let test_app = spawn_app().await;
     let configuration = get_configuration().expect("Failed to read configuration.");
-    let connect_url = configuration
-        .database
-        .get_connection_string()
-        .expose_secret();
-    let mut connection = PgConnection::connect(&connect_url)
-        .await
-        .expect("Failed to connect to Postgres");
+    let mut connection = PgConnection::connect(
+        &configuration
+            .database
+            .get_connection_string()
+            .expose_secret(),
+    )
+    .await
+    .expect("Failed to connect to Postgres");
     let client = reqwest::Client::new();
 
     let body = "name=le%20mario&email=mario%40example.com";

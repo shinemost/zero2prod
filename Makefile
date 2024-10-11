@@ -17,4 +17,13 @@ test:
 check:
 	cargo check
 
-.PHONY: http http2 run test check
+prepare:
+	cargo sqlx prepare -- --lib
+
+build:
+	docker build -t zero2prod --file Dockerfile .
+
+docker_run:
+	docker run -p 8000:8000 zero2prod
+
+.PHONY: http http2 run test check prepare build
