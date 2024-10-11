@@ -1,8 +1,8 @@
 
-http:
-	curl -i -X POST -d 'email=thomas_mann@hotmail.com&name=Tom' http://127.0.0.1:8000/subscriptions
+get:
+	http GET localhost:8000/health_check
 
-http2:
+post:
 	http -f POST localhost:8000/subscriptions email=joker11@gmail.com name=joker11
 
 run:
@@ -24,6 +24,6 @@ build:
 	docker build -t zero2prod --file Dockerfile .
 
 docker_run:
-	docker run -p 8000:8000 zero2prod
+	docker run --network=host zero2prod
 
-.PHONY: http http2 run test check prepare build
+.PHONY: get post run test check prepare build
