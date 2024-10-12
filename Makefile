@@ -26,4 +26,7 @@ build:
 docker_run:
 	docker run --network=host zero2prod
 
-.PHONY: get post run test check prepare build
+deploy:
+	doctl apps create --spec spec.yaml
+
+.PHONY: get post run test check prepare build deploy

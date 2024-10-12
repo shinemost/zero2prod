@@ -1,7 +1,6 @@
 //! tests/health_check.rs
 
 use once_cell::sync::Lazy;
-use secrecy::ExposeSecret;
 use sqlx::{Connection, Executor, PgConnection, PgPool};
 use std::net::TcpListener;
 use zero2prod::configuration::{get_configuration, DatabaseSettings};
@@ -70,16 +69,15 @@ async fn spawn_app() -> TestApp {
 }
 
 pub async fn configure_database(config: &DatabaseSettings) -> PgPool {
-    let mut connection =
-        PgConnection::connect(&config.get_connection_string_without_db().expose_secret())
-            .await
-            .expect("Failed to connect to Postgres.");
+    let mut connection = PgConnection::connect_with(&config.without_db())
+        .await
+        .expect("Failed to connect to Postgres.");
     connection
         .execute(format!(r#"CREATE DATABASE "{}";"#, config.database_name).as_str())
         .await
         .expect("Failed to create database.");
 
-    let connection_pool = PgPool::connect(&config.get_connection_string().expose_secret())
+    let connection_pool = PgPool::connect_with(config.with_db())
         .await
         .expect("Failed to connect to Postgres.");
     sqlx::migrate!("./migrations")
@@ -93,14 +91,9 @@ pub async fn configure_database(config: &DatabaseSettings) -> PgPool {
 async fn subscribe_returns_a_200_for_valid_form_data() {
     let test_app = spawn_app().await;
     let configuration = get_configuration().expect("Failed to read configuration.");
-    let mut connection = PgConnection::connect(
-        &configuration
-            .database
-            .get_connection_string()
-            .expose_secret(),
-    )
-    .await
-    .expect("Failed to connect to Postgres");
+    let mut connection = PgConnection::connect_with(&configuration.database.with_db())
+        .await
+        .expect("Failed to connect to Postgres");
     let client = reqwest::Client::new();
 
     let body = "name=le%20mario&email=mario%40example.com";
@@ -118,8 +111,8 @@ async fn subscribe_returns_a_200_for_valid_form_data() {
         .fetch_one(&mut connection)
         .await
         .expect("Failed to fetch saved subscription.");
-    assert_eq!(saved.email, "mario@example.com");
-    assert_eq!(saved.name, "le mario");
+    assert_eq!(saved.email, "joker11@gmail.com");
+    assert_eq!(saved.name, "joker11");
 }
 
 #[tokio::test]
