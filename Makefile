@@ -1,3 +1,8 @@
+sqlx:
+	cargo install sqlx-cli --no-default-features --features postgres
+
+plsq:
+	apt update && apt install postgresql-client -y
 
 get:
 	http GET localhost:8000/health_check
