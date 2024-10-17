@@ -7,6 +7,9 @@ plsq:
 get:
 	http GET localhost:8000/health_check
 
+init:
+	apt install git httpie libssl-dev pkg-config -y
+
 post:
 	http -f POST localhost:8000/subscriptions email=joker11@gmail.com name=joker11
 
