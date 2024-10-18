@@ -5,7 +5,13 @@ edition = "2021"
 authors = ["shinemost"]
 
 [dev-dependencies]
-reqwest = "0.12.8"
+quickcheck = "1.0.3"
+quickcheck_macros = "1.0.0"
+rand = "0.8"
+claim = "0.5.0"
+fake = "2.10.0"
+tokio = { version = "1.40.0", features = ["macros", "rt"] }
+wiremock = "0.6.2"
 
 [dependencies]
 actix-web = "4.9.0"
@@ -34,12 +40,12 @@ sqlx = { version = "0.8.2", default-features = false, features = [
 ] }
 serde-aux = "4.5.0"
 unicode-segmentation = "1.12.0"
-claim = "0.5.0"
 validator = "0.18.1"
-fake = "2.10.0"
-quickcheck = "1.0.3"
-quickcheck_macros = "1.0.0"
-rand = "0.8"
+reqwest = { version = "0.12.8", default-features = false, features = [
+  "json",
+  "rustls-tls",
+] }
+
 
 [lib]
 path = "src/lib.rs"
