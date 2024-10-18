@@ -11,6 +11,20 @@ pub struct FormData {
     name: String,
 }
 
+// 为NewsSubscriber结构体实现TryForm特质
+// 完美的解决从FormData转化为NewSubscriber
+// 专业的事交给专业的特质去干
+// 将意图表达得更加清晰，有助于别人的理解
+impl TryFrom<FormData> for NewSubscriber {
+    type Error = String;
+
+    fn try_from(form: FormData) -> Result<Self, Self::Error> {
+        let name = SubscriberName::parse(form.name)?;
+        let email = SubscriberEmail::parse(form.email)?;
+        Ok(NewSubscriber { name, email })
+    }
+}
+
 // 使用打桩宏简化插桩代码，解耦，插桩代码与业务代码分离
 // 必须要放在需要打桩的函数上面
 // 每次函数被调用时打桩代码即会执行
@@ -24,7 +38,11 @@ subscriber_name = %form.name
     )
 )]
 pub async fn subscribe(form: web::Form<FormData>, pool: web::Data<PgPool>) -> HttpResponse {
-    let new_subscriber = match parse_subscriber(form.0) {
+    // 此处直接使用try_from
+    // 亦可使用TryInto特质提供的try_into方法
+    // 详情可查看TryInto特质源码
+    // let new_subscriber = match NewSubscriber::try_from(form.0) {
+    let new_subscriber = match form.0.try_into() {
         Ok(subscriber) => subscriber,
         Err(_) => return HttpResponse::BadRequest().finish(),
     };
@@ -33,6 +51,7 @@ pub async fn subscribe(form: web::Form<FormData>, pool: web::Data<PgPool>) -> Ht
         Err(e) => HttpResponse::InternalServerError().body(e.to_string()),
     }
 }
+
 #[tracing::instrument(
     name = "Saving new subscriber details into database",
     skip(new_subscriber, pool)
@@ -58,11 +77,4 @@ pub async fn insert_subscriber(
         e
     })?;
     Ok(())
-}
-
-// 负责将入参转换为领域模型
-pub fn parse_subscriber(form: FormData) -> Result<NewSubscriber, String> {
-    let name = SubscriberName::parse(form.name)?;
-    let email = SubscriberEmail::parse(form.email)?;
-    Ok(NewSubscriber { name, email })
 }
