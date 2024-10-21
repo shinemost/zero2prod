@@ -20,7 +20,7 @@ bunyan:
 	cargo install bunyan
 
 test:
-	TEST_LOG=true cargo test health_check_works | bunyan
+	TEST_LOG=true cargo test  | bunyan
 
 check:
 	cargo check

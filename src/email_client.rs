@@ -11,6 +11,8 @@ pub struct EmailClient {
 }
 
 #[derive(serde::Serialize)]
+// json格式化的时候字段名称转为帕斯卡命名法
+#[serde(rename_all = "PascalCase")]
 struct SendEmailRequest {
     from: String,
     to: String,
@@ -70,17 +72,46 @@ mod tests {
     use fake::faker::lorem::en::{Paragraph, Sentence};
     use fake::{Fake, Faker};
     use secrecy::Secret;
-    use wiremock::matchers::any;
+    use wiremock::matchers::{header, header_exists, method, path};
+    use wiremock::Request;
     use wiremock::{Mock, MockServer, ResponseTemplate};
+    struct SendEmailBodyMatcher;
+
+    // 利用wiremock::Match特质实现自己的匹配器，用于测试
+    impl wiremock::Match for SendEmailBodyMatcher {
+        fn matches(&self, request: &Request) -> bool {
+            // 将请求体切片转为JSON格式
+            let result: Result<serde_json::Value, _> = serde_json::from_slice(&request.body);
+            if let Ok(body) = result {
+                dbg!(&body);
+                // 检查是否填充了所有必填字段，而不检查字段的具体值
+                body.get("From").is_some()
+                    && body.get("To").is_some()
+                    && body.get("Subject").is_some()
+                    && body.get("HtmlBody").is_some()
+                    && body.get("TextBody").is_some()
+            } else {
+                // 如果解析失败，则不匹配请求
+                false
+            }
+        }
+    }
+
     #[tokio::test]
-    async fn send_email_fires_a_request_to_base_url() {
+    async fn send_email_sends_the_expected_request() {
         // 准备
         let mock_server = MockServer::start().await;
         let sender = SubscriberEmail::parse(SafeEmail().fake()).unwrap();
         let email_client = EmailClient::new(mock_server.uri(), sender, Secret::new(Faker.fake()));
         // any()表示会匹配所有请求
         // method("GET")表示只会匹配GET请求
-        Mock::given(any())
+        // header_exists请求头是否存在给定的Key
+        Mock::given(header_exists("X-Postmark-Server-Token"))
+            .and(header("Content-Type", "application/json"))
+            .and(path("/email"))
+            .and(method("POST"))
+            // 使用自定义的匹配器
+            .and(SendEmailBodyMatcher)
             // 返回200响应
             .respond_with(ResponseTemplate::new(200))
             // 期望收到一个请求
