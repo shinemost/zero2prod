@@ -23,18 +23,29 @@ pub struct TestApp {
     pub db_pool: PgPool,
 }
 
+// 将发送请求的代码提出来作为公共代码
+impl TestApp {
+    pub async fn post_subscriptions(&self, body: String) -> reqwest::Response {
+        reqwest::Client::new()
+            .post(&format!("{}/subscriptions", &self.address))
+            .header("Content-Type", "application/x-www-form-urlencoded")
+            .body(body)
+            .send()
+            .await
+            .expect("Failed to execute request.")
+    }
+}
+
 // Launch our application in the background ~somehow~
 pub async fn spawn_app() -> TestApp {
     // 只会在第一次使用TRACING时会调用initialize
     // 其他时候都会直接跳过
     Lazy::force(&TRACING);
 
-    // Randomise configuration to ensure test isolation
+    // 手动配置configuration
     let configuration = {
         let mut c = get_configuration().expect("Failed to read configuration.");
-        // Use a different database for each test case
         c.database.database_name = Uuid::new_v4().to_string();
-        // Use a random OS port
         c.application.port = 0;
         c
     };
