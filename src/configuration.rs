@@ -1,4 +1,4 @@
-use secrecy::{ExposeSecret, SecretString};
+use secrecy::{ExposeSecret, Secret, SecretString};
 use serde_aux::prelude::deserialize_number_from_string;
 use sqlx::postgres::{PgConnectOptions, PgSslMode};
 use sqlx::ConnectOptions;
@@ -111,6 +111,7 @@ impl TryFrom<String> for Environment {
 pub struct EmailClientSettings {
     pub base_url: String,
     pub sender_email: String,
+    pub authorization_token: Secret<String>,
 }
 impl EmailClientSettings {
     pub fn sender(&self) -> Result<SubscriberEmail, String> {
