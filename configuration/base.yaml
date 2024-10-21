@@ -4,5 +4,10 @@ database:
   host: "localhost"
   port: 5432
   username: "postgres"
-  password: "password"
-  database_name: "newsletter"
+  password: "postgres"
+  database_name: "postgres"
+email_client:
+  base_url: "localhost"
+  sender_email: "test@gmail.com" 
+  authorization_token: "my-secret-token"
+  timeout_milliseconds: 10000
