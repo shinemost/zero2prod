@@ -1,12 +1,17 @@
 use crate::configuration::{DatabaseSettings, Settings};
 use crate::email_client::EmailClient;
-use crate::routes::{health_check, subscribe};
+use crate::routes::{confirm, health_check, subscribe};
 use actix_web::dev::Server;
 use actix_web::{web, App, HttpServer};
 use sqlx::postgres::PgPoolOptions;
 use sqlx::PgPool;
 use std::net::TcpListener;
 use tracing_actix_web::TracingLogger;
+
+// 这里需要一个包装类型，以便在subscribe处理器中获取URL
+// 在actix-web中，从上下文中得到数据的方式是基于类型的：
+// 如果使用的是原始的String类型，则可能会由于类型相同而冲突
+pub struct ApplicationBaseUrl(pub String);
 
 // 用于保存新构建的服务器及其端口
 pub struct Application {
@@ -33,7 +38,13 @@ impl Application {
         );
         let listener = TcpListener::bind(&address)?;
         let port = listener.local_addr().unwrap().port();
-        let server = run(listener, connection_pool, email_client)?;
+        dbg!(configuration.application.base_url.clone());
+        let server = run(
+            listener,
+            connection_pool,
+            email_client,
+            configuration.application.base_url,
+        )?;
         // 将端口保存在新结构体中
         Ok(Self { port, server })
     }
@@ -56,10 +67,12 @@ pub fn run(
     listener: TcpListener,
     db_pool: PgPool,
     email_client: EmailClient,
+    base_url: String,
 ) -> Result<Server, std::io::Error> {
     // 将连接池使用Web::data包装起来，其本质上是一个Arc智能指针
     let db_pool = web::Data::new(db_pool);
     let email_client = web::Data::new(email_client);
+    let base_url = web::Data::new(ApplicationBaseUrl(base_url));
     // 通过上下文捕获connection
     let server = HttpServer::new(move || {
         App::new()
@@ -67,11 +80,13 @@ pub fn run(
             .wrap(TracingLogger::default())
             .route("/health_check", web::get().to(health_check))
             .route("/subscriptions", web::post().to(subscribe))
+            .route("/subscriptions/confirm", web::get().to(confirm))
             // 将连接注册为应用程序状态的一部分
             // 获得一个指针的副本并将其绑定到应用程序状态
             // 类似于golang里的context透传元数据
             .app_data(db_pool.clone())
             .app_data(email_client.clone())
+            .app_data(base_url.clone())
     })
     .listen(listener)?
     .run();
