@@ -48,6 +48,7 @@ reqwest = { version = "0.12.8", default-features = false, features = [
   "rustls-tls",
 ] }
 rand = { version = "0.8", features = ["std_rng"] }
+thiserror = "1.0.65"
 
 
 [lib]
