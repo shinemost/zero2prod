@@ -22,6 +22,9 @@ bunyan:
 test:
 	TEST_LOG=true cargo test  | bunyan
 
+test2:
+	RUST_LOG="sqlx=error,info" TEST_LOG=enabled cargo t subscribe_fails_if_there_is_a_fatal_database_error | bunyan
+
 check:
 	cargo check
 
